@@ -208,4 +208,68 @@ print('Recall: %f' % recall)
 # f1: 2 tp / (2 tp + fp + fn)
 f1 = f1_score(error_df.true_class, pred)
 print('F1 score: %f' % f1)
+##### show oc-SVM figure ######
+#import libraries
+# https://medium.com/@mail.garima7/one-class-svm-oc-svm-9ade87da6b10
+from pyod.utils.data import generate_data
+from pyod.models.ocsvm import OCSVM
+from pyod.utils.example import visualize
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
+import numpy as np
+from sklearn.decomposition import PCA
+import pandas as pd
+import numpy as np
+
+df = pd.read_csv("creditcard.csv")
+data = df.drop(['Time'], axis=1)
+data['Amount'] = StandardScaler().fit_transform(data['Amount'].values.reshape(-1, 1))
+
+X_train, X_test = train_test_split(data, test_size=0.1, random_state=RANDOM_SEED)
+X_train = X_train[X_train.Class == 0]
+y_train = X_train['Class']
+X_train = X_train.drop(['Class'], axis=1)
+
+y_test = X_test['Class']
+X_test = X_test.drop(['Class'], axis=1)
+
+X_train = X_train.values
+X_test = X_test.values
+
+pca = PCA(n_components=2)
+
+X_train = X_train[:12000]
+# https://machinelearningmastery.com/principal-components-analysis-for-dimensionality-reduction-in-python/
+# reduce the dimesion to 2
+pca.fit(X_train)
+X_train = pca.transform(X_train)
+y_train = y_train[:12000]
+X_test = X_test[:10000]
+pca.fit(X_test)
+X_test = pca.transform(X_test)
+y_test = y_test[:10000]
+# scaling = MinMaxScaler(feature_range=(-1,1)).fit(X_train)
+# X_train = scaling.transform(X_train)
+# X_test = scaling.transform(X_test)
+
+svm = OneClassSVM(nu=0.9, gamma=0.5, kernel='rbf')
+print(svm)
+svm.fit(X_train)
+# pred = svm.predict(X_test)
+# print(pred)
+# binary labels
+y_train_pred = svm.predict(X_train)
+y_train_pred = [0 if e == -1 else 1 for e in y_train_pred]
+y_test_pred = svm.predict(X_test)
+y_test_pred = [0 if e == -1 else 1 for e in y_test_pred]
+# prediction visualization
+visualize(svm,
+    X_train,
+    y_train,
+    X_test,
+    y_test,
+    y_train_pred,
+    y_test_pred,
+    show_figure=True,
+    save_figure=False,)
 
